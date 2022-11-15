@@ -3,7 +3,7 @@ import openai
 import os
 import scipy
 
-openai_api_key = os.environ["OPENAI_API_KEY"]
+OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 
 
 def gpt3_call(
