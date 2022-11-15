@@ -1,0 +1,7 @@
+A blicket detector is a special kind of machine that turns on when special objects, called blickets, are placed on it. The detector will turn on if and only if all objects that are blickets are placed on it. It will not turn on if some blickets are missing, but placing an object that is not a blicket on it will not prevent it from turning on.
+
+We have the following objects: {objects}. Our goal is to figure out which ones are blickets.
+
+Let's experiment and place objects on the detector to figure out which ones are blickets.
+It is important to solve this problem using as few experiments as possible, so explore efficiently.
+

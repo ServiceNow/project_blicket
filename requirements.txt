@@ -1,0 +1,9 @@
+gym==0.26.2
+importlib_metadata>=4.8.0
+matplotlib==3.6.2
+openai==0.25.0
+scipy==1.9.3
+seaborn==0.12.1
+torch==1.13.0
+transformers==4.24.0
+typing-extensions==4.4.0
