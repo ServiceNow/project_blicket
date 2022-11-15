@@ -211,10 +211,14 @@ if __name__ == "__main__":
         metrics = _score_blickets(agent_blickets, env._current_gt_hypothesis.blickets)
         print(metrics)
 
-        result = vars(args)
-        result.update(dict(repeat=repeat, n_actions=len(action_history)))
+        result = dict(vars(args))
+        result.update(
+            dict(repeat=repeat, n_actions=len(action_history), actions=action_history)
+        )
         result.update(metrics)
         results.append(result)
+        pd.DataFrame(results).to_csv(f"{experiment_dir}/results.csv", index=False)
+        print(results)
 
         # assert all(
         #     blicket_status[i] == BlicketStatus.yes for i in env._current_gt_hypothesis.blickets
@@ -225,5 +229,3 @@ if __name__ == "__main__":
         #     if not blicket_status[i] == BlicketStatus.yes
         # )
         # print("All assertions passed. Solution is correct.")
-
-    pd.DataFrame(results).to_csv(f"{experiment_dir}/results.csv", index=False)
