@@ -17,6 +17,9 @@ class BaseAgent(object):
     def next_action(self, state_info):
         raise NotImplementedError()
 
+    def decide_blickets(self):
+        raise NotImplementedError()
+
 
 class RandomAgent(BaseAgent):
     def __init__(self, n_objects, seed=42) -> None:
