@@ -2,6 +2,7 @@
 Utility functions
 
 """
+import numpy as np
 
 
 def _enum(values, final="and"):
@@ -13,6 +14,35 @@ def _enum(values, final="and"):
         return f"{', '.join(values[: -1])} {final} {values[-1]}"
     else:
         return values[-1]
+
+
+def _score_blickets(agent, true):
+    print("Agent:", agent, "  true:", true)
+
+    # Convert indices of blickets to binary array
+    tmp = np.zeros(
+        agent.shape[0],
+    )
+    tmp[list(true)] = 1
+    true = tmp.astype(bool)
+    del tmp
+
+    metrics = {}
+    metrics["accuracy"] = (agent == true).sum() / len(agent)
+    metrics["tp"] = (agent == true)[true].sum()
+    metrics["tn"] = (agent == true)[~true].sum()
+    metrics["fp"] = (~true).sum() - metrics["tn"]
+    metrics["fn"] = true.sum() - metrics["tp"]
+    metrics["precision"] = metrics["tp"] / agent.sum()
+    metrics["recall"] = metrics["tp"] / true.sum()
+    metrics["f1"] = (
+        2
+        * metrics["precision"]
+        * metrics["recall"]
+        / (metrics["precision"] + metrics["recall"])
+    )
+
+    return metrics
 
 
 def _verbalize_action(action, objects):
