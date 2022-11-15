@@ -36,6 +36,8 @@ class GPT3Agent(BaseAgent):
         argmax_action=True,
         engine="text-davinci-002",
         seed=42,
+        verbose=False,
+        output_dir=".",
     ) -> None:
         super().__init__(n_objects)
 
@@ -60,6 +62,8 @@ class GPT3Agent(BaseAgent):
         self.actions_text = [_verbalize_action(a, self.objects) for a in self.actions]
         self.random_actions = random_actions
         self.argmax_action = argmax_action
+        self.output_dir = output_dir
+        self.verbose = verbose
 
         # Agent state variables
         self.stop_proba = []
@@ -137,7 +141,7 @@ class GPT3Agent(BaseAgent):
             + f"{_verbalize_action(state_info['prev_action'], self.objects)}\n"
             + f"Outcome: The detector {'did' if state_info['detector_activated'] else 'did not'} turn on.\n\n"
         )
-        print(self.prompt)
+        self.verbose and print(self.prompt)
 
         # Query the model about its beliefs about blickets
         object_combos, object_combo_scores = self._score_blickets()
@@ -171,7 +175,7 @@ class GPT3Agent(BaseAgent):
         plt.plot(np.arange(1, self.exp_id), self.stop_proba)
         plt.xlabel("Step")
         plt.ylabel("P(enough info to answer)")
-        plt.savefig("stop_proba.png", bbox_inches="tight")
+        plt.savefig(f"{self.output_dir}/stop_proba.png", bbox_inches="tight")
         # -- Blick scores (individually per object)
         plt.clf()
         sns.barplot(x=np.arange(len(object_indiv_scores)), y=object_indiv_scores)
@@ -181,7 +185,7 @@ class GPT3Agent(BaseAgent):
         plt.ylabel("P(blicket)")
         plt.xlabel("Object")
         plt.title("Model belief that objects are blickets")
-        plt.savefig(f"object_scores_{self.exp_id - 1}.png")
+        plt.savefig(f"{self.output_dir}/object_scores_{self.exp_id - 1}.png")
         # -- Blicket scores (for combinations of objects)
         plt.clf()
         sns.barplot(x=np.arange(len(object_combos)), y=object_combo_scores)
@@ -190,16 +194,18 @@ class GPT3Agent(BaseAgent):
         plt.xlabel("Blicket set")
         plt.title("Model belief that objects are blickets")
         plt.savefig(
-            f"object_scores_combined_{self.exp_id - 1}.png", bbox_inches="tight"
+            f"{self.output_dir}/object_scores_combined_{self.exp_id - 1}.png",
+            bbox_inches="tight",
         )
-        # -- Action scores
-        plt.clf()
-        sns.barplot(x=np.arange(len(action_scores)), y=action_scores)
-        plt.xlabel("Action (on/off for each object)")
-        plt.ylabel("P(next best action)")
-        plt.title("Model belief of the next best action to perform")
-        plt.gca().set_xticklabels([str(a) for a in self.actions])
-        plt.savefig(f"action{self.exp_id}_scores.png")
+        if best_action is not None:
+            # -- Action scores
+            plt.clf()
+            sns.barplot(x=np.arange(len(action_scores)), y=action_scores)
+            plt.xlabel("Action (on/off for each object)")
+            plt.ylabel("P(next best action)")
+            plt.title("Model belief of the next best action to perform")
+            plt.gca().set_xticklabels([str(a) for a in self.actions])
+            plt.savefig(f"{self.output_dir}/action{self.exp_id}_scores.png")
 
         self.exp_id += 1
         return best_action
