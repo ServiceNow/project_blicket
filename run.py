@@ -69,15 +69,21 @@ if __name__ == "__main__":
     parser.add_argument(
         "--stop-on-answerable", action=argparse.BooleanOptionalAction, default=False
     )
+    parser.add_argument(
+        "--minimize-prompting", action=argparse.BooleanOptionalAction, default=False
+    )
     parser.add_argument("--experiment-dir", type=str, default=".")
     parser.add_argument("--random-seed", type=int, default=None)
+    parser.add_argument("--gpt3-engine", type=str, default="text-davinci-002")
 
     args = parser.parse_args()
     print("Configuration:", args)
     n_objects = args.n_objects
     random_actions = args.random_actions
+    gpt3_engine = args.gpt3_engine
     max_steps = args.max_steps
     repeats = args.repeats
+    minimize_prompting = args.minimize_prompting
     experiment_dir = args.experiment_dir
     stop_on_answerable = args.stop_on_answerable
     random = np.random.RandomState(args.random_seed)
@@ -122,8 +128,14 @@ if __name__ == "__main__":
             n_objects=n_objects,
             objects=objects,
             random_actions=random_actions,
+            stop_proba_threshold=0.97
+            if not stop_on_answerable
+            else np.inf,  # Never stop on model request
+            engine=gpt3_engine,
             output_dir=repeat_dir,
             seed=repeat,
+            verbose=False,
+            minimize_prompting=minimize_prompting,
         )
         action_history = [action]
 
@@ -204,12 +216,13 @@ if __name__ == "__main__":
                 [blicket_status[idx] for idx in range(n_objects)],
             )
 
-        print("Exploration complete. Asking agent to decide blickets.")
+        print("Exploration complete.")
         print(action_history)
         agent_blickets = agent.decide_blickets()
         print(agent_blickets)
         metrics = _score_blickets(agent_blickets, env._current_gt_hypothesis.blickets)
         print(metrics)
+        print("\n" * 2)
 
         result = dict(vars(args))
         result.update(
@@ -219,6 +232,9 @@ if __name__ == "__main__":
         results.append(result)
         pd.DataFrame(results).to_csv(f"{experiment_dir}/results.csv", index=False)
         print(results)
+
+        with open(f"{repeat_dir}/prompt.txt", "w") as f:
+            f.write(agent.prompt)
 
         # assert all(
         #     blicket_status[i] == BlicketStatus.yes for i in env._current_gt_hypothesis.blickets
