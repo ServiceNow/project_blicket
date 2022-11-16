@@ -37,9 +37,11 @@ class GPT3Agent(BaseAgent):
         objects,
         random_actions=False,
         argmax_action=True,
+        stop_proba_threshold=0.97,
         engine="text-davinci-002",
         seed=42,
         verbose=False,
+        minimize_prompting=False,
         output_dir=".",
     ) -> None:
         super().__init__(n_objects)
@@ -65,8 +67,10 @@ class GPT3Agent(BaseAgent):
         self.actions_text = [_verbalize_action(a, self.objects) for a in self.actions]
         self.random_actions = random_actions
         self.argmax_action = argmax_action
+        self.stop_proba_threshold = stop_proba_threshold
         self.output_dir = output_dir
         self.verbose = verbose
+        self.minimize_prompting = minimize_prompting
 
         # Agent state variables
         self.stop_proba = []
@@ -146,10 +150,6 @@ class GPT3Agent(BaseAgent):
         )
         self.verbose and print(self.prompt)
 
-        # Query the model about its beliefs about blickets
-        object_combos, object_combo_scores = self._score_blickets()
-        object_indiv_scores = self._score_blickets_individually()
-
         # Model belief that it has enough info to decide all blickets
         self.stop_proba.append(self._is_decidable())
 
@@ -179,27 +179,30 @@ class GPT3Agent(BaseAgent):
         plt.xlabel("Step")
         plt.ylabel("P(enough info to answer)")
         plt.savefig(f"{self.output_dir}/stop_proba.png", bbox_inches="tight")
-        # -- Blick scores (individually per object)
-        plt.clf()
-        sns.barplot(x=np.arange(len(object_indiv_scores)), y=object_indiv_scores)
-        plt.gca().set_xticklabels(self.objects)
-        plt.axhline(0.5, linestyle="--", color="red")
-        plt.ylim(0, 1)
-        plt.ylabel("P(blicket)")
-        plt.xlabel("Object")
-        plt.title("Model belief that objects are blickets")
-        plt.savefig(f"{self.output_dir}/object_scores_{self.exp_id - 1}.png")
-        # -- Blicket scores (for combinations of objects)
-        plt.clf()
-        sns.barplot(x=np.arange(len(object_combos)), y=object_combo_scores)
-        plt.gca().set_xticklabels(object_combos, rotation=90)
-        plt.ylabel("P(blicket)")
-        plt.xlabel("Blicket set")
-        plt.title("Model belief that objects are blickets")
-        plt.savefig(
-            f"{self.output_dir}/object_scores_combined_{self.exp_id - 1}.png",
-            bbox_inches="tight",
-        )
+        if not self.minimize_prompting:
+            # -- Blick scores (individually per object)
+            object_indiv_scores = self._score_blickets_individually()
+            plt.clf()
+            sns.barplot(x=np.arange(len(object_indiv_scores)), y=object_indiv_scores)
+            plt.gca().set_xticklabels(self.objects)
+            plt.axhline(0.5, linestyle="--", color="red")
+            plt.ylim(0, 1)
+            plt.ylabel("P(blicket)")
+            plt.xlabel("Object")
+            plt.title("Model belief that objects are blickets")
+            plt.savefig(f"{self.output_dir}/object_scores_{self.exp_id - 1}.png")
+            # -- Blicket scores (for combinations of objects)
+            object_combos, object_combo_scores = self._score_blickets()
+            plt.clf()
+            sns.barplot(x=np.arange(len(object_combos)), y=object_combo_scores)
+            plt.gca().set_xticklabels(object_combos, rotation=90)
+            plt.ylabel("P(blicket)")
+            plt.xlabel("Blicket set")
+            plt.title("Model belief that objects are blickets")
+            plt.savefig(
+                f"{self.output_dir}/object_scores_combined_{self.exp_id - 1}.png",
+                bbox_inches="tight",
+            )
         if best_action is not None:
             # -- Action scores
             plt.clf()
