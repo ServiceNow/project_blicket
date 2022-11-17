@@ -217,6 +217,12 @@ if __name__ == "__main__":
             )
 
         print("Exploration complete.")
+        agent.close(
+            state_info={
+                "prev_action": action,
+                "detector_activated": detector_activated,
+            }
+        )
         print(action_history)
         agent_blickets = agent.decide_blickets()
         print(agent_blickets)
